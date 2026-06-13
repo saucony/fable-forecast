@@ -322,7 +322,8 @@ ${[...byModel.entries()].sort((a, b) => costOf(b[1], b[0]) - costOf(a[1], a[0]))
 // ---------------------------------------------------------------------------
 // License (Gumroad) — verified once, cached locally. Fails open politely.
 // ---------------------------------------------------------------------------
-const GUMROAD_PRODUCT_ID = process.env.FABLE_FORECAST_PRODUCT_ID || 'REPLACE_AFTER_GUMROAD_SETUP';
+// Unique permalink of the Gumroad product (stable even if the pretty URL changes).
+const GUMROAD_PRODUCT_PERMALINK = process.env.FABLE_FORECAST_PRODUCT_ID || 'lbosvv';
 const LICENSE_CACHE = path.join(os.homedir(), '.fable-forecast-license');
 
 async function verifyKey(key) {
@@ -333,7 +334,7 @@ async function verifyKey(key) {
     const res = await fetch('https://api.gumroad.com/v2/licenses/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ product_id: GUMROAD_PRODUCT_ID, license_key: key, increment_uses_count: 'true' }),
+      body: new URLSearchParams({ product_permalink: GUMROAD_PRODUCT_PERMALINK, license_key: key, increment_uses_count: 'true' }),
     });
     const body = await res.json();
     if (body && body.success) {
