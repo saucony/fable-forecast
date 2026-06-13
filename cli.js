@@ -360,12 +360,13 @@ async function main() {
   const opts = {
     days: parseInt(opt('days', '30'), 10) || 30,
     report: opt('report', null),
+    json: opt('json', null),
     key: opt('key', null),
     claudeDir: opt('claude-dir', path.join(os.homedir(), '.claude')),
   };
 
   if (args.includes('--help') || args.includes('-h')) {
-    console.log('Usage: fable-forecast [--days N] [--report out.html] [--key LICENSE] [--claude-dir DIR]');
+    console.log('Usage: fable-forecast [--days N] [--report out.html] [--json out.json] [--key LICENSE] [--claude-dir DIR]');
     return;
   }
 
@@ -379,6 +380,25 @@ async function main() {
   }
 
   printTerminal(data, opts);
+
+  if (opts.json) {
+    // Aggregate-only export for team audits: token counts and derived costs.
+    // Contains NO prompts, code, file names, or message content.
+    const s = buildScenarios(data.byModel);
+    const out = {
+      tool: 'fable-forecast', version: 1,
+      generatedAt: new Date().toISOString(),
+      windowDays: opts.days,
+      firstTs: new Date(data.firstTs).toISOString(),
+      lastTs: new Date(data.lastTs).toISOString(),
+      totals: s.total,
+      scenariosWindow: { actual: s.actual, allFable: s.allFable, allOpus: s.allOpus, allSonnet: s.allSonnet },
+      byModel: Object.fromEntries([...data.byModel].map(([f, t]) => [f, { ...t, costWindow: costOf(t, f) }])),
+      byProject: Object.fromEntries([...data.byProject].map(([n, p]) => [n, { ...p.tok, costWindow: p.cost }])),
+    };
+    fs.writeFileSync(opts.json, JSON.stringify(out, null, 2));
+    console.log(`  JSON summary written to ${opts.json} (aggregate token counts only)\n`);
+  }
 
   if (opts.report) {
     let licensed = false;
